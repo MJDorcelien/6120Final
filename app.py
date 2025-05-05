@@ -15,8 +15,36 @@ def createDBConnection():
         print("Error when connecting to the MySQL database", e)
         return None
     
-def showStoredProcesses():
-    print("implemented stored processes")
+def showStoredProcesses(db):
+    print("\nAre you are patient, provider, or admin?")
+    print("1. patient")
+    print("2. provider")
+    print("3. admin")
+    choice = input("Enter your choice: ")
+
+    if choice == '1':
+        patientProcedures(db)
+
+def patientProcedures(db):
+    while True:
+        print("\nPlease choose an action:")
+        print("1 - view my profile")
+        print("2 - update my information")
+
+        choice = input("Enter your selection: ")
+
+        if choice == '1':
+            try:
+                patient_id = input("What's your patient ID: ")
+                cursor = db.cursor()
+                cursor.callproc('viewMyInfoPatient', [patient_id])
+                db.commit()
+                for result in cursor.stored_results():
+                    print(result.fetchall())
+            except mysql.connector.Error as err:
+                print(f"An error occurred: {err}")
+            finally:
+                cursor.close()
 
 def showTrigers(db):
     print("\n showing triggers")
@@ -37,7 +65,7 @@ def showTrigers(db):
 
 def showViews(db):
     patient_id = input("\nEnter the patient id:\n")
-    
+
     print("\nChoose an view you'd like to see")
     print("1. View Visit Details")
     choice = input("Enter your choice: ")
@@ -63,20 +91,7 @@ def main():
             choice = input("Enter your choice: ")
 
             if choice == '1':
-                cursor = db.cursor()
-                try:
-                    query = "SELECT * FROM patients"
-                    cursor.execute(query)
-                    rows = cursor.fetchall()
-                    if rows:
-                        for row in rows:
-                            print(row)
-                    else:
-                        print("No Log Entries")
-                except mysql.connector.Error as err:
-                    print(f"An error occurred: {err}")
-                finally:
-                    cursor.close()
+                showStoredProcesses(db)
 
             elif choice == '2':
                 showTrigers(db)

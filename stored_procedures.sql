@@ -88,6 +88,17 @@ BEGIN
     SELECT COUNT(*) AS total_patients FROM patients;
 END$$
 
+DELIMITER $$
+CREATE PROCEDURE viewMyInfoPatient(
+    IN pPatientID
+)
+BEGIN
+    SELECT *
+    FROM patients
+    WHERE patient_id = pPatientID;
+END $$
+DELIMITER;
+
 -- p7. Update patient first name
 CREATE PROCEDURE UpdatePatientFirstName(
     IN pPatientID INT,

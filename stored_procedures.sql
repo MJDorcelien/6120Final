@@ -1,5 +1,80 @@
 
 -- Patient Queries
+ALTER PROCEDURE patientsInsertSelectUpdateDelete (@patient_id  INTEGER,
+                                                  @first_name VARCHAR(45),
+                                                  @last_name VARCHAR(45),
+                                                  @address VARCHAR(100),
+                                                  @phone_number BIGINT,
+                                                  @email VARCHAR(100),
+                                                  @insurance_id INT,
+                                                  @dob YEAR)
+AS
+  BEGIN
+      IF @StatementType = 'Insert'
+        BEGIN
+            INSERT INTO patients
+                        (patient_id,
+                         first_name,
+                         last_name,
+                         address,
+                         phone_number,
+                         email,
+                         insurance_id,
+                         dob)
+            VALUES     ( @patient_id,
+                         @first_name,
+                         @last_name,
+                         @address,
+                         @phone_number,
+                         @email,
+                         @insurance_id,
+                         @dob)
+        END
+
+      IF @StatementType = 'Select'
+        BEGIN
+            SELECT *
+            FROM   patients
+        END
+
+      IF @StatementType = 'Update'
+        BEGIN
+            UPDATE employee
+            SET    patient_id = @patient_id,
+                   first_name = @first_name,
+                   last_name = @last_name,
+                   address = @address,
+                   phone_number = @phone_number,
+                   email = @email,
+                   insurance_id = @insurance_id,
+                   dob = @dob
+            WHERE  patient_id = @patient_id
+        END
+      ELSE IF @StatementType = 'Delete'
+        BEGIN
+            DELETE FROM patients
+            WHERE  patient_id = @patient_id
+        END
+  END
+
+DELIMITER $$
+CREATE PROCEDURE patientRecords(
+    IN PatientID INT,
+    IN VisitID INT
+)
+BEGIN
+    SELECT 
+       v.visit_id,
+       p.patient_id,
+       CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+       CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name,
+       v.visit_date,
+       v.reason
+    FROM visits as v, patients as p, providers as r
+    WHERE p.patient_id = PatientID AND v.visit_id = VisitID;
+END $$
+DELIMITER ;
+
 -- p5. Patients born after 2008 and with insurance
 CREATE PROCEDURE selectAllPatients
 AS
@@ -7,20 +82,51 @@ SELECT * FROM patients
 WHERE dob > 2008 AND insurance_id IS NOT NULL
 GO;
 -- p6. Count the number of patients
-CREATE PROCEDURE selectAllPatients
+CREATE PROCEDURE countAllPatients
 AS
 SELECT COUNT(*) AS total_patients FROM patients
 GO;
 
 -- p7. Update patient first name
-UPDATE patients SET first_name = 'Elizabeth' WHERE patient_id = 1;
+DELIMITER $$
+CREATE PROCEDURE updatePatients(
+    IN PatientID INT,
+    IN pVisitID INT,
+    IN FirstName TEXT,
+    IN LastName TEXT,
+    IN Address TEXT,
+    IN PhoneNumber INT,
+    IN Email TEXT,
+    IN InsuranceID INT,
+    IN DOB DATE
+)
+BEGIN
+    UPDATE patients
+    SET 
+        patient_id = PatientID,
+        first_name = FirstName,
+        last_name = LastName,
+        address = Address,
+        phone_number = PhoneNumber,
+        email = Email,
+        insurance_id = InsuranceID,
+        dob = DOB
+    WHERE patient_id = PatientID;
+END $$
+DELIMITER ;
 -- p8. Patients with at least one visit
+CREATE PROCEDURE patientsOneVisit
+AS
 SELECT DISTINCT p.* 
 FROM patients p
-JOIN visits v ON p.patient_id = v.patient_id;
+JOIN visits v ON p.patient_id = v.patient_id
+GO;
 -- p9. Patients who haven't had a visit yet
+CREATE PROCEDURE patientsNoVisits
+AS
 SELECT * FROM patients 
-WHERE patient_id NOT IN (SELECT patient_id FROM visits);
+WHERE patient_id NOT IN (SELECT patient_id FROM visits)
+GO;
 
 -- Provider Queries
 -- r4. Providers who have seen more than 10 patients

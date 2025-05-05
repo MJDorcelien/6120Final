@@ -72,3 +72,11 @@ CREATE TABLE supplies(
   supply_name VARCHAR(100) NOT NULL,
   FOREIGN KEY (visit_id) REFERENCES visits(visit_id) ON DELETE CASCADE
 );
+
+-- Create log table for simple trigger messages
+CREATE TABLE event_log (
+  log_id INT AUTO_INCREMENT PRIMARY KEY,
+  event_time DATETIME DEFAULT NOW(),
+  event_type VARCHAR(100),
+  message TEXT
+);

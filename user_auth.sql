@@ -56,9 +56,7 @@ GRANT DELETE ON 6120_project_2.tests TO 'employee'@'localhost';
 -- Grant full access to the admin
 GRANT ALL ON 6120_project_2.* TO 'admin'@'localhost';
 
--- ---------------------------------------------------------------------
--- Application-Level User Role Management (Optional, inside DB)
--- ---------------------------------------------------------------------
+-- Application-Level User Role Managemet
 
 -- Create Roles Table to define user roles
 CREATE TABLE Roles (

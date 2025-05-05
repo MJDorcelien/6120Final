@@ -76,152 +76,190 @@ END $$
 DELIMITER ;
 
 -- p5. Patients born after 2008 and with insurance
-CREATE PROCEDURE selectAllPatients
-AS
-SELECT * FROM patients 
-WHERE dob > 2008 AND insurance_id IS NOT NULL
-GO;
+CREATE PROCEDURE GetYoungInsuredPatients()
+BEGIN
+    SELECT * FROM patients 
+    WHERE dob > '2008-01-01' AND insurance_id IS NOT NULL;
+END$$
+
 -- p6. Count the number of patients
-CREATE PROCEDURE countAllPatients
-AS
-SELECT COUNT(*) AS total_patients FROM patients
-GO;
+CREATE PROCEDURE CountAllPatients()
+BEGIN
+    SELECT COUNT(*) AS total_patients FROM patients;
+END$$
 
 -- p7. Update patient first name
-DELIMITER $$
-CREATE PROCEDURE updatePatients(
-    IN PatientID INT,
-    IN pVisitID INT,
-    IN FirstName TEXT,
-    IN LastName TEXT,
-    IN Address TEXT,
-    IN PhoneNumber INT,
-    IN Email TEXT,
-    IN InsuranceID INT,
-    IN DOB DATE
+CREATE PROCEDURE UpdatePatientFirstName(
+    IN pPatientID INT,
+    IN pNewFirstName VARCHAR(100)
 )
 BEGIN
-    UPDATE patients
-    SET 
-        patient_id = PatientID,
-        first_name = FirstName,
-        last_name = LastName,
-        address = Address,
-        phone_number = PhoneNumber,
-        email = Email,
-        insurance_id = InsuranceID,
-        dob = DOB
-    WHERE patient_id = PatientID;
-END $$
-DELIMITER ;
+    UPDATE patients 
+    SET first_name = pNewFirstName 
+    WHERE patient_id = pPatientID;
+END$$
+
 -- p8. Patients with at least one visit
-CREATE PROCEDURE patientsOneVisit
-AS
-SELECT DISTINCT p.* 
-FROM patients p
-JOIN visits v ON p.patient_id = v.patient_id
-GO;
+CREATE PROCEDURE GetPatientsWithVisits()
+BEGIN
+    SELECT DISTINCT p.* 
+    FROM patients p
+    JOIN visits v ON p.patient_id = v.patient_id;
+END$$
+
 -- p9. Patients who haven't had a visit yet
-CREATE PROCEDURE patientsNoVisits
-AS
-SELECT * FROM patients 
-WHERE patient_id NOT IN (SELECT patient_id FROM visits)
-GO;
+CREATE PROCEDURE GetPatientsWithoutVisits()
+BEGIN
+    SELECT * FROM patients 
+    WHERE patient_id NOT IN (SELECT patient_id FROM visits);
+END$$
 
--- Provider Queries
+-- Provider-Related Procedures
 -- r4. Providers who have seen more than 10 patients
-SELECT provider_id, COUNT(DISTINCT patient_id) AS patient_count
-FROM visits
-GROUP BY provider_id
-HAVING patient_count > 10;
-
--- r5. Total revenue per provider (assumes a price column exists; you may need to adjust if not)
--- Remove this if there's no `price` field anywhere
--- SELECT pr.provider_id, pr.first_name, pr.last_name, SUM(v.price) AS total_revenue
--- FROM providers pr
--- JOIN visits v ON pr.provider_id = v.provider_id
--- GROUP BY pr.provider_id;
+CREATE PROCEDURE GetHighVolumeProviders()
+BEGIN
+    SELECT provider_id, COUNT(DISTINCT patient_id) AS patient_count
+    FROM visits
+    GROUP BY provider_id
+    HAVING patient_count > 10;
+END$$
 
 -- r6. Most common specialty
-SELECT specialty, COUNT(*) AS count
-FROM providers
-GROUP BY specialty
-ORDER BY count DESC
-LIMIT 1;
+CREATE PROCEDURE GetMostCommonSpecialty()
+BEGIN
+    SELECT specialty, COUNT(*) AS count
+    FROM providers
+    GROUP BY specialty
+    ORDER BY count DESC
+    LIMIT 1;
+END$$
 
--- Visit Queries
+-- Visit-Related Procedures
 -- v1. Get all visits
-SELECT * FROM visits;
+CREATE PROCEDURE GetAllVisits()
+BEGIN
+    SELECT * FROM visits;
+END$$
 
 -- v2. All visits of a specific patient
-SELECT * FROM visits WHERE patient_id = 1;
+CREATE PROCEDURE GetVisitsByPatient(IN pPatientID INT)
+BEGIN
+    SELECT * FROM visits WHERE patient_id = pPatientID;
+END$$
 
 -- v3. Visits in last 30 days
-SELECT * FROM visits WHERE visit_date >= CURDATE() - INTERVAL 30 DAY;
+CREATE PROCEDURE GetRecentVisits()
+BEGIN
+    SELECT * FROM visits 
+    WHERE visit_date >= CURDATE() - INTERVAL 30 DAY;
+END$$
 
 -- v4. All visits of a specific provider
-SELECT * FROM visits WHERE provider_id = 3;
+CREATE PROCEDURE GetVisitsByProvider(IN pProviderID INT)
+BEGIN
+    SELECT * FROM visits WHERE provider_id = pProviderID;
+END$$
 
 -- v5. Most recent visit for each patient
-SELECT * FROM visits WHERE visit_date = (SELECT MAX(visit_date) FROM visits);
+CREATE PROCEDURE GetMostRecentVisitPerPatient()
+BEGIN
+    SELECT * FROM visits v
+    WHERE visit_date = (
+        SELECT MAX(visit_date) 
+        FROM visits v2 
+        WHERE v2.patient_id = v.patient_id
+    );
+END$$
 
--- v6. Patient name, provider name, facility
-SELECT v.visit_id, v.visit_date, 
-       CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
-       CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name,
-       v.facility
-FROM visits v
-JOIN patients p ON v.patient_id = p.patient_id
-JOIN providers pr ON v.provider_id = pr.provider_id;
+-- v6. Patient name, provider name, and facility
+CREATE PROCEDURE GetVisitDetails()
+BEGIN
+    SELECT v.visit_id, v.visit_date, 
+           CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+           CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name,
+           v.facility
+    FROM visits v
+    JOIN patients p ON v.patient_id = p.patient_id
+    JOIN providers pr ON v.provider_id = pr.provider_id;
+END$$
 
--- v7. Visits in descending date
-SELECT * FROM visits ORDER BY visit_date DESC;
+-- v7. Visits in descending order by date
+CREATE PROCEDURE GetVisitsDesc()
+BEGIN
+    SELECT * FROM visits ORDER BY visit_date DESC;
+END$$
 
 -- v8. Number of visits per patient
-SELECT patient_id, COUNT(*) AS visit_count
-FROM visits
-GROUP BY patient_id;
+CREATE PROCEDURE CountVisitsPerPatient()
+BEGIN
+    SELECT patient_id, COUNT(*) AS visit_count
+    FROM visits
+    GROUP BY patient_id;
+END$$
 
--- Clinical Notes Queries
+-- Clinical Notes Procedures
 -- c1. Get all clinical notes
-SELECT * FROM clinical_notes;
+CREATE PROCEDURE GetAllClinicalNotes()
+BEGIN
+    SELECT * FROM clinical_notes;
+END$$
 
--- c2. Clinical notes with a prescription (join prescriptions)
-SELECT cn.*
-FROM clinical_notes cn
-JOIN prescriptions p ON cn.visit_id = p.visit_id;
+-- c2. Clinical notes with a prescription
+CREATE PROCEDURE GetNotesWithPrescriptions()
+BEGIN
+    SELECT cn.*
+    FROM clinical_notes cn
+    JOIN prescriptions p ON cn.visit_id = p.visit_id;
+END$$
 
--- c3. Notes by provider (via visits)
-SELECT cn.note_id,
-       CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name,
-       cn.signs_symptoms, cn.diagnosis
-FROM clinical_notes cn
-JOIN visits v ON cn.visit_id = v.visit_id
-JOIN providers pr ON v.provider_id = pr.provider_id;
+-- c3. Notes by provider
+CREATE PROCEDURE GetNotesByProvider()
+BEGIN
+    SELECT cn.note_id,
+           CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name,
+           cn.signs_symptoms, cn.diagnosis
+    FROM clinical_notes cn
+    JOIN visits v ON cn.visit_id = v.visit_id
+    JOIN providers pr ON v.provider_id = pr.provider_id;
+END$$
 
--- Extras Queries
+-- Extras & Supplies Procedures
 -- e1. Get all extras
-SELECT * FROM extras;
+CREATE PROCEDURE GetAllExtras()
+BEGIN
+    SELECT * FROM extras;
+END$$
 
--- e2. Extras where supplies exist (join supplies)
-SELECT e.* 
-FROM extras e
-JOIN supplies s ON e.visit_id = s.visit_id;
+-- e2. Extras where supplies exist
+CREATE PROCEDURE GetExtrasWithSupplies()
+BEGIN
+    SELECT e.* 
+    FROM extras e
+    JOIN supplies s ON e.visit_id = s.visit_id;
+END$$
 
--- e3. Patient & provider names where supplies were NOT used
-SELECT e.extra_id,
-       CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
-       CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name
-FROM extras e
-JOIN visits v ON e.visit_id = v.visit_id
-JOIN patients p ON v.patient_id = p.patient_id
-JOIN providers pr ON v.provider_id = pr.provider_id
-WHERE v.visit_id NOT IN (SELECT visit_id FROM supplies);
+-- e3. Names where supplies not used
+CREATE PROCEDURE GetExtrasWithoutSupplies()
+BEGIN
+    SELECT e.extra_id,
+           CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+           CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name
+    FROM extras e
+    JOIN visits v ON e.visit_id = v.visit_id
+    JOIN patients p ON v.patient_id = p.patient_id
+    JOIN providers pr ON v.provider_id = pr.provider_id
+    WHERE v.visit_id NOT IN (SELECT visit_id FROM supplies);
+END$$
 
--- e4. Extras by a specific provider
-SELECT e.extra_id,
-       CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name
-FROM extras e
-JOIN visits v ON e.visit_id = v.visit_id
-JOIN providers pr ON v.provider_id = pr.provider_id
-WHERE pr.provider_id = 2;
+-- e4. Extras by specific provider
+CREATE PROCEDURE GetExtrasByProvider(IN pProviderID INT)
+BEGIN
+    SELECT e.extra_id,
+           CONCAT(pr.first_name, ' ', pr.last_name) AS provider_name
+    FROM extras e
+    JOIN visits v ON e.visit_id = v.visit_id
+    JOIN providers pr ON v.provider_id = pr.provider_id
+    WHERE pr.provider_id = pProviderID;
+END$$
+
+DELIMITER ;

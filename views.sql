@@ -1,54 +1,57 @@
--- VIEWS ------------------------------------------------------
-
-CREATE VIEW view_visit_details
+-- Views: ---------------------------------------
+CREATE VIEW view_visit_details AS
 SELECT 
     v.visit_id,
     v.patient_id,
-    concat(p.last_name, ', ', p.first_name) AS patient_name,
+    CONCAT(p.last_name, ', ', p.first_name) AS patient_name,
     v.provider_id,
-    concat(r.last_name, ', ', r.first_name) AS provider_name,
+    CONCAT(r.last_name, ', ', r.first_name) AS provider_name,
     v.visit_date,
     v.facility,
     v.reason
-FROM visits as v, patients as p, providers as r
-JOIN 
-    v.patient_id = p.patient_id
-JOIN
-    v.visit_id = r.provider_id;
+FROM visits v
+JOIN patients p ON v.patient_id = p.patient_id
+JOIN providers r ON v.provider_id = r.provider_id;
 
+-- View: Provider and their patients with visit IDs
 CREATE VIEW view_providers_patient_details AS
 SELECT
-    concat(r.first_name, ' ', r.last_name) as provider_name,
+    CONCAT(r.first_name, ' ', r.last_name) AS provider_name,
     v.visit_id,
-    concat(p.first_name, ' ', p.last_name) as patient_name,
-FROM 
-    vists as v, providers as r, patients as p;
+    CONCAT(p.first_name, ' ', p.last_name) AS patient_name
+FROM visits v
+JOIN providers r ON v.provider_id = r.provider_id
+JOIN patients p ON v.patient_id = p.patient_id;
 
--- see a list of the providers and the patients they've seen
+-- View: List of providers and the patients they’ve seen
 CREATE VIEW view_providers_details AS
 SELECT 
-    concat(providers.first_name, ' ', providers.last_name) as provider_name, 
-    concat(patients.first_name, ' ', patients.last_name) as patient_name
-From providers
-order by last_name
-join visits.patient_id = visits.provider_id;
+    CONCAT(r.first_name, ' ', r.last_name) AS provider_name, 
+    CONCAT(p.first_name, ' ', p.last_name) AS patient_name
+FROM visits v
+JOIN providers r ON v.provider_id = r.provider_id
+JOIN patients p ON v.patient_id = p.patient_id
+ORDER BY r.last_name;
 
--- patient info
+-- View: Patient demographic and insurance info
 CREATE VIEW view_patient_info AS
 SELECT 
     patient_id, 
-    concat(first_name, ' ', last_name) as patient_name, 
+    CONCAT(first_name, ' ', last_name) AS patient_name, 
     address, 
     phone_number,
     email,
     insurance_id,
     dob
-FROM patients 
+FROM patients
 ORDER BY patient_id;
 
--- list of tests and how old the patients were
+-- View: Patients and their providers
 CREATE VIEW view_patients_providers AS
-SELECT concat(patients.first_name, ' ', patients.last_name) as patient_name, concat(providers.first_name, ' ', providers.last_name) as provider_name
-From providers, patients
-order by patients.last_name
-join visits.patient_id = visits.provider_id;
+SELECT 
+    CONCAT(p.first_name, ' ', p.last_name) AS patient_name, 
+    CONCAT(r.first_name, ' ', r.last_name) AS provider_name
+FROM visits v
+JOIN patients p ON v.patient_id = p.patient_id
+JOIN providers r ON v.provider_id = r.provider_id
+ORDER BY p.last_name;

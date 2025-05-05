@@ -14,6 +14,15 @@ def createDBConnection():
     except Error as e:
         print("Error when connecting to the MySQL database", e)
         return None
+    
+def showStoredProcesses():
+    print("implemented stored processes")
+
+def showTrigers():
+    print("implement triggers")
+
+def showViews():
+    print("implement views")
 
 if __name__ == "__main__":
     main()
